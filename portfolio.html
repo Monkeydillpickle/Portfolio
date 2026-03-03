@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dill // Roblox Developer</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #12121a;
+    --bg3: #1a1a28;
+    --accent: #00e5ff;
+    --accent2: #7c4dff;
+    --accent3: #ff3d71;
+    --text: #e8e8f0;
+    --text-dim: #8888a0;
+    --card-bg: rgba(255,255,255,0.03);
+    --card-border: rgba(255,255,255,0.06);
+    --glow: 0 0 40px rgba(0,229,255,0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+
+  /* ---- NOISE OVERLAY ---- */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ---- GRID BG ---- */
+  .grid-bg {
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .grid-bg::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(0,229,255,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 80%, rgba(124,77,255,0.04) 0%, transparent 50%);
+  }
+
+  /* ---- NAV ---- */
+  nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    backdrop-filter: blur(20px);
+    background: rgba(10,10,15,0.7);
+    border-bottom: 1px solid var(--card-border);
+  }
+
+  .logo {
+    font-weight: 800;
+    font-size: 1.3rem;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .logo span {
+    -webkit-text-fill-color: var(--text-dim);
+    font-weight: 400;
+    font-size: 0.85rem;
+    margin-left: 8px;
+  }
+
+  .nav-links { display: flex; gap: 32px; }
+
+  .nav-links a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: color 0.3s;
+    position: relative;
+  }
+
+  .nav-links a:hover { color: var(--accent); }
+
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--accent);
+    transition: width 0.3s;
+  }
+
+  .nav-links a:hover::after { width: 100%; }
+
+  /* ---- HERO ---- */
+  .hero {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 120px 80px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .hero-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--accent);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.2s;
+  }
+
+  .hero-tag::before {
+    content: '';
+    width: 40px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  .hero h1 {
+    font-size: clamp(3rem, 7vw, 5.5rem);
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -2px;
+    margin-bottom: 28px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.4s;
+  }
+
+  .hero h1 .highlight {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .hero-desc {
+    font-size: 1.2rem;
+    color: var(--text-dim);
+    max-width: 550px;
+    line-height: 1.7;
+    margin-bottom: 40px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.6s;
+  }
+
+  .hero-cta {
+    display: flex;
+    gap: 16px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.8s;
+  }
+
+  .btn {
+    padding: 14px 32px;
+    border-radius: 8px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #000;
+    border: none;
+    box-shadow: 0 4px 24px rgba(0,229,255,0.25);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0,229,255,0.35);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--card-border);
+  }
+
+  .btn-ghost:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  /* ---- STATS BAR ---- */
+  .stats-bar {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    gap: 60px;
+    padding: 60px 40px;
+    border-top: 1px solid var(--card-border);
+    border-bottom: 1px solid var(--card-border);
+    background: var(--bg2);
+  }
+
+  .stat {
+    text-align: center;
+    opacity: 0;
+    animation: fadeUp 0.6s ease forwards;
+  }
+
+  .stat:nth-child(1) { animation-delay: 0.3s; }
+  .stat:nth-child(2) { animation-delay: 0.4s; }
+  .stat:nth-child(3) { animation-delay: 0.5s; }
+  .stat:nth-child(4) { animation-delay: 0.6s; }
+
+  .stat-num {
+    font-size: 2.5rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .stat-label {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-top: 4px;
+    font-weight: 500;
+  }
+
+  /* ---- SECTIONS ---- */
+  section {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 100px 80px;
+  }
+
+  .section-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 48px;
+  }
+
+  /* ---- SKILLS ---- */
+  .skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+  }
+
+  .skill-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 32px;
+    transition: all 0.4s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .skill-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+
+  .skill-card:hover {
+    border-color: rgba(0,229,255,0.15);
+    transform: translateY(-4px);
+    box-shadow: var(--glow);
+  }
+
+  .skill-card:hover::before { opacity: 1; }
+
+  .skill-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+  }
+
+  .skill-card h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .skill-card p {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .skill-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .skill-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(0,229,255,0.08);
+    color: var(--accent);
+    border: 1px solid rgba(0,229,255,0.12);
+  }
+
+  /* ---- PROJECTS ---- */
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 24px;
+  }
+
+  .project-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.4s;
+  }
+
+  .project-card:hover {
+    border-color: rgba(124,77,255,0.2);
+    transform: translateY(-4px);
+    box-shadow: 0 0 40px rgba(124,77,255,0.1);
+  }
+
+  .project-header {
+    padding: 24px 28px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .project-type {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(124,77,255,0.1);
+    color: var(--accent2);
+    border: 1px solid rgba(124,77,255,0.15);
+  }
+
+  .project-body { padding: 20px 28px 28px; }
+
+  .project-body h3 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .project-body p {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+
+  .project-tech {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .project-tech span {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.04);
+    color: var(--text-dim);
+    border: 1px solid var(--card-border);
+  }
+
+  /* ---- CODE BLOCK ---- */
+  .code-showcase {
+    background: var(--bg2);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-top: 48px;
+  }
+
+  .code-top {
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--card-border);
+    background: rgba(255,255,255,0.02);
+  }
+
+  .code-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+
+  .code-dot:nth-child(1) { background: #ff5f57; }
+  .code-dot:nth-child(2) { background: #febc2e; }
+  .code-dot:nth-child(3) { background: #28c840; }
+
+  .code-filename {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-left: 12px;
+  }
+
+  .code-body {
+    padding: 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    line-height: 1.8;
+    color: var(--text-dim);
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  .code-body .kw { color: var(--accent2); }
+  .code-body .fn { color: var(--accent); }
+  .code-body .str { color: #c3e88d; }
+  .code-body .cm { color: #546e7a; }
+  .code-body .num { color: #f78c6c; }
+  .code-body .op { color: var(--accent3); }
+
+  /* ---- PRICING ---- */
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+
+  .price-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 36px 32px;
+    transition: all 0.4s;
+    position: relative;
+  }
+
+  .price-card.featured {
+    border-color: rgba(0,229,255,0.2);
+    background: rgba(0,229,255,0.03);
+  }
+
+  .price-card.featured::before {
+    content: 'POPULAR';
+    position: absolute;
+    top: -1px;
+    right: 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    padding: 4px 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #000;
+    font-weight: 600;
+    border-radius: 0 0 8px 8px;
+    letter-spacing: 1px;
+  }
+
+  .price-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--glow);
+  }
+
+  .price-card h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .price-card .price {
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin-bottom: 4px;
+    letter-spacing: -1px;
+  }
+
+  .price-card .price-note {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-bottom: 24px;
+  }
+
+  .price-features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .price-features li {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .price-features li::before {
+    content: '✓';
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 0.8rem;
+  }
+
+  /* ---- CONTACT ---- */
+  .contact-box {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 60px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .contact-box::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at center, rgba(0,229,255,0.04) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  .contact-box h2 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 16px;
+  }
+
+  .contact-box p {
+    color: var(--text-dim);
+    font-size: 1.05rem;
+    margin-bottom: 32px;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .contact-links {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .contact-link {
+    padding: 14px 28px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--card-border);
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .contact-link:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: var(--glow);
+  }
+
+  .contact-link .icon { font-size: 1.2rem; }
+
+  /* ---- FOOTER ---- */
+  footer {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 40px;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    border-top: 1px solid var(--card-border);
+  }
+
+  /* ---- ANIMATIONS ---- */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ---- RESPONSIVE ---- */
+  @media (max-width: 768px) {
+    .hero { padding: 120px 32px; }
+    section { padding: 80px 32px; }
+    nav { padding: 16px 24px; }
+    .nav-links { gap: 20px; }
+    .stats-bar { gap: 32px; flex-wrap: wrap; }
+    .contact-box { padding: 40px 24px; }
+    .hero-cta { flex-direction: column; }
+    .code-body { font-size: 0.7rem; }
+  }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<nav>
+  <div class="logo">Dill <span>// Roblox Developer</span></div>
+  <div class="nav-links">
+    <a href="#skills">Skills</a>
+    <a href="#projects">Work</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#contact">Contact</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-tag">AVAILABLE FOR COMMISSIONS</div>
+  <h1>I build <span class="highlight">games</span><br>players don't leave.</h1>
+  <p class="hero-desc">Lua scripter specializing in game systems, automation, combat mechanics, and monetization. 8+ years on Roblox and I know what makes players stay and spend.</p>
+  <div class="hero-cta">
+    <a href="#contact" class="btn btn-primary">Hire Me →</a>
+    <a href="#projects" class="btn btn-ghost">View Work</a>
+  </div>
+</header>
+
+<!-- STATS -->
+<div class="stats-bar">
+  <div class="stat">
+    <div class="stat-num">8+</div>
+    <div class="stat-label">Years on Roblox</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">Lua</div>
+    <div class="stat-label">Primary Language</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">50+</div>
+    <div class="stat-label">Systems Built</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">24hr</div>
+    <div class="stat-label">Avg. Turnaround</div>
+  </div>
+</div>
+
+<!-- SKILLS -->
+<section id="skills">
+  <div class="section-tag">01 // Expertise</div>
+  <h2 class="section-title">What I Do</h2>
+  <div class="skills-grid">
+    <div class="skill-card">
+      <div class="skill-icon" style="background:rgba(0,229,255,0.1);">⚔️</div>
+      <h3>Combat & Ability Systems</h3>
+      <p>Hitboxes, combos, skill trees, cooldowns, knockback. Frame-perfect combat that feels responsive and fair.</p>
+      <div class="skill-tags">
+        <span class="skill-tag">Hitbox</span>
+        <span class="skill-tag">Raycasting</span>
+        <span class="skill-tag">VFX</span>
+        <span class="skill-tag">Animations</span>
+      </div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-icon" style="background:rgba(124,77,255,0.1);">💰</div>
+      <h3>Monetization & Gamepasses</h3>
+      <p>Developer Products, VIP systems, battle passes, loot boxes, daily rewards. Systems designed to convert players into revenue.</p>
+      <div class="skill-tags">
+        <span class="skill-tag">DevProducts</span>
+        <span class="skill-tag">DataStore</span>
+        <span class="skill-tag">Retention</span>
+      </div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-icon" style="background:rgba(255,61,113,0.1);">🎲</div>
+      <h3>RNG & Gacha Systems</h3>
+      <p>Weighted loot tables, pity systems, luck multipliers, rolling animations. The loop that keeps players spinning.</p>
+      <div class="skill-tags">
+        <span class="skill-tag">Probability</span>
+        <span class="skill-tag">UI/UX</span>
+        <span class="skill-tag">Tweening</span>
+      </div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-icon" style="background:rgba(195,232,141,0.1);">🏗️</div>
+      <h3>Tycoon & Simulator Core</h3>
+      <p>Dropper loops, upgrade trees, rebirth systems, prestige multipliers. Full tycoon/sim frameworks from scratch.</p>
+      <div class="skill-tags">
+        <span class="skill-tag">OOP</span>
+        <span class="skill-tag">Modulescript</span>
+        <span class="skill-tag">Optimization</span>
+      </div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-icon" style="background:rgba(255,183,77,0.1);">🗄️</div>
+      <h3>Data & Backend</h3>
+      <p>ProfileService/DataStore2, session locking, data migration, anti-dupe, leaderboards. Your players' data stays safe.</p>
+      <div class="skill-tags">
+        <span class="skill-tag">ProfileService</span>
+        <span class="skill-tag">RemoteEvents</span>
+        <span class="skill-tag">Security</span>
+      </div>
+    </div>
+    <div class="skill-card">
+      <div class="skill-icon" style="background:rgba(0,229,255,0.1);">🤖</div>
+      <h3>NPC & AI Systems</h3>
+      <p>Pathfinding, state machines, boss AI, wave spawners, aggro tables. Enemies that feel alive and challenging.</p>
+      <div class="skill-tags">
+        <span class="skill-tag">PathfindingService</span>
+        <span class="skill-tag">FSM</span>
+        <span class="skill-tag">Spawners</span>
+      </div>
+    </div>
+  </div>
+
+
+</section>
+
+<!-- PROJECTS -->
+<section id="projects">
+  <div class="section-tag">02 // Portfolio</div>
+  <h2 class="section-title">Recent Work</h2>
+  <div class="projects-grid">
+    <div class="project-card" style="grid-column: 1 / -1;">
+      <div class="project-video">
+        <video autoplay muted loop playsinline style="width:100%;border-radius:16px 16px 0 0;display:block;">
+          <source src="map-showcase.mp4" type="video/mp4">
+        </video>
+      </div>
+      <div class="project-header">
+        <span class="project-type" style="background:rgba(195,232,141,0.1);color:#c3e88d;border-color:rgba(195,232,141,0.15);">MAP BUILDING + INCREMENTAL</span>
+      </div>
+      <div class="project-body">
+        <h3>Environment & Incremental Systems</h3>
+        <p>Custom map builds with detailed terrain, lighting, and atmosphere paired with deep incremental progression systems. Prestige loops, scaling economies, and idle mechanics layered into environments that immerse players and keep them grinding.</p>
+        <div class="project-tech">
+          <span>Roblox Studio</span>
+          <span>Terrain</span>
+          <span>Incremental</span>
+          <span>Progression</span>
+          <span>Level Design</span>
+        </div>
+      </div>
+    </div>
+    <div class="project-card">
+      <div class="project-header">
+        <span class="project-type">GAME SYSTEM</span>
+      </div>
+      <div class="project-body">
+        <h3>Full Tycoon Framework</h3>
+        <p>Complete tycoon game system with dropper mechanics, upgrade trees, rebirth prestige, auto-collectors, and integrated gamepass monetization.</p>
+        <div class="project-tech">
+          <span>Lua</span>
+          <span>OOP</span>
+          <span>DataStore</span>
+          <span>UI</span>
+        </div>
+      </div>
+    </div>
+    <div class="project-card">
+      <div class="project-header">
+        <span class="project-type">COMBAT</span>
+      </div>
+      <div class="project-body">
+        <h3>Anime Combat Engine</h3>
+        <p>Skill-based combat system with combo chains, special moves, blocking, dashing, and custom VFX. Built for anime-style fighting games.</p>
+        <div class="project-tech">
+          <span>Raycasting</span>
+          <span>Animations</span>
+          <span>VFX</span>
+          <span>Networking</span>
+        </div>
+      </div>
+    </div>
+    <div class="project-card">
+      <div class="project-header">
+        <span class="project-type">AUTOMATION</span>
+      </div>
+      <div class="project-body">
+        <h3>Game Bot & Automation Tools</h3>
+        <p>Python + AHK automation systems with computer vision, template matching, and intelligent mouse movement for complex game interactions.</p>
+        <div class="project-tech">
+          <span>Python</span>
+          <span>OpenCV</span>
+          <span>AutoHotkey</span>
+        </div>
+      </div>
+    </div>
+    <div class="project-card">
+      <div class="project-header">
+        <span class="project-type">BACKEND</span>
+      </div>
+      <div class="project-body">
+        <h3>Trading & Economy System</h3>
+        <p>Secure player-to-player trading, marketplace listings, anti-dupe protection, and real-time value tracking with ProfileService.</p>
+        <div class="project-tech">
+          <span>ProfileService</span>
+          <span>RemoteEvents</span>
+          <span>Anti-Exploit</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="section-tag">03 // Rates</div>
+  <h2 class="section-title">Pricing</h2>
+  <div class="pricing-grid">
+    <div class="price-card">
+      <h3>Quick Fix</h3>
+      <div class="price">5K R$</div>
+      <div class="price-note">Bug fixes & small tweaks</div>
+      <ul class="price-features">
+        <li>Single script fixes</li>
+        <li>DataStore repairs</li>
+        <li>UI adjustments</li>
+        <li>Same-day delivery</li>
+      </ul>
+    </div>
+    <div class="price-card featured">
+      <h3>Game System</h3>
+      <div class="price">15-30K R$</div>
+      <div class="price-note">Full system from scratch</div>
+      <ul class="price-features">
+        <li>Combat / RNG / Tycoon core</li>
+        <li>Gamepass integration</li>
+        <li>Data saving included</li>
+        <li>2-5 day delivery</li>
+      </ul>
+    </div>
+    <div class="price-card">
+      <h3>Full Game</h3>
+      <div class="price">50K+ R$</div>
+      <div class="price-note">Complete game scripting</div>
+      <ul class="price-features">
+        <li>All systems & UI</li>
+        <li>Monetization built-in</li>
+        <li>Testing & optimization</li>
+        <li>1-3 week delivery</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="contact-box">
+    <h2>Let's Build Something</h2>
+    <p>Got a project in mind? Hit me up and let's talk scope, timeline, and budget.</p>
+    <div class="contact-links">
+      <a href="https://www.roblox.com/users/profile" class="contact-link">
+        <span class="icon">🎮</span> Roblox: Dill
+      </a>
+      <a href="#" class="contact-link">
+        <span class="icon">💬</span> Discord: monkeh_1
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  © 2026 Dill. Built different.
+</footer>
+
+</body>
+</html>
